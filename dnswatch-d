@@ -1,0 +1,120 @@
+#!/usr/bin/env python
+import sys
+import os
+import time
+import md5
+import signal
+
+def getmodtime(filename, default=None):
+  """gets the modificationtime of the given file"""
+  if os.path.exists(filename):
+    return os.stat(filename)[os.path.stat.ST_MTIME]
+  else:
+    return default
+
+class dnsstate:
+  """keeps track of dns files"""
+  def __init__(self, watchdir):
+    self.watchdir = watchdir
+    self.filenames = os.listdir(self.watchdir)
+    for filename in self.filenames:
+      if filename == "CVS": continue
+      if filename.startswith("."): continue
+      pathname = os.path.join(self.watchdir, filename)
+      if os.path.isdir(pathname):
+        self.filenames.extend([os.path.join(filename, subfile) for subfile in os.listdir(pathname)])
+    self.mtimes = {}
+    for filename in self.filenames:
+      self.mtimes[filename] = getmodtime(os.path.join(self.watchdir, filename))
+  def __eq__(self, other):
+    return isinstance(other, dnsstate) and self.watchdir == other.watchdir and self.mtimes == other.mtimes
+  def __ne__(self, other):
+    return not self == other
+  def getsums(self):
+    sums = {}
+    for filename in self.filenames:
+      pathname = os.path.join(self.watchdir, filename)
+      if not os.path.isdir(pathname):
+        contents = open(pathname, 'rb').read()
+        sums[filename] = md5.md5(contents).hexdigest()
+    return sums
+
+def readserial(zonefile):
+  """reads the serial number from the zonefile"""
+  if not os.path.exists(zonefile):
+    return ""
+  lastseriallines = [line for line in open(zonefile, "r").readlines() if line.lower().find("serial") != -1]
+  for lastserialline in lastseriallines:
+    if ";" in lastserialline:
+      lastserialline = lastserialline[:lastserialline.find(";")]
+    lastserial = lastserialline.strip()
+    if lastserial:
+      return lastserial
+  return ""
+
+if __name__ == "__main__":
+  zones = os.getenv("dnswatchzones", "").split()
+  dnswatchbasedir = os.getenv("dnswatchbasedir", "/etc/autodns/")
+  servicefile = os.getenv("dnswatchsubsys", "/var/lock/subsys/dnswatch")
+  pidfile = os.getenv("dnswatchpid", "/var/run/dnswatch.pid")
+  zonedir = os.getenv("dnswatchzonedir", "/var/named/")
+  refreshcmd = os.getenv("dnswatchrefreshcmd", "/etc/init.d/named reload")
+  logfilename = os.getenv("dnswatchlog", None)
+  thisfile = __file__
+  if os.path.islink(__file__):
+    thisfile = os.readlink(__file__)
+  makezonecmd = os.path.join(os.path.dirname(os.path.abspath(thisfile)), "makezone")
+  pid = os.fork()
+  if pid:
+    open(pidfile, "w").write("%d\n" % pid)
+    sys.exit()
+  if logfilename is None:
+    logfile = sys.stdout
+  else:
+    logfile = open(logfilename, 'a')
+    sys.stderr = logfile
+  def logmessage(message):
+    logfile.write("%s: %s\n" % (time.asctime(), message))
+    logfile.flush()
+  finished = False
+  def handlesignal(signum, frame):
+    global finished
+    if signum == signal.SIGTERM:
+      logmessage("received sigterm, exiting")
+      finished = True
+  signal.signal(signal.SIGTERM, handlesignal)
+  logmessage("starting dnswatch on %s for zones %s" % (dnswatchbasedir, " ".join(zones)))
+  laststates = {} # dnsstate(dnswatchdir) for each zone
+  # force an update when dnswatch is started
+  # TODO: work out how not to force this...
+  lastsums = {} # laststate.getsums() for each zone
+  lastpos = 0
+  while not finished and os.path.isfile(servicefile):
+    for zone in zones:
+      zoneprefix = os.getenv("dnswatchzoneprefix_%s" % zone, zone+".")
+      dnswatchdir = os.path.join(dnswatchbasedir, zone)
+      zonefile = os.path.join(zonedir, "named.%s" % zone)
+      currentstate = dnsstate(dnswatchdir)
+      if currentstate != laststates.get(zone, None):
+        currentsums = currentstate.getsums()
+        if currentsums != lastsums.get(zone, {}):
+          logmessage("dns info has changed, running %s" % makezonecmd)
+          try:
+            lastserial = readserial(zonefile)
+            child_stdin, child_stdout, child_stderr = os.popen3([makezonecmd, zone, zoneprefix, lastserial], "r")
+            zonefilecontents = child_stdout.read()
+            errors = child_stderr.read()
+            if not finished and zonefilecontents and not errors:
+              logmessage("got zonefile, writing to %s" % zonefile)
+              open(zonefile, "w").write(zonefilecontents)
+              logmessage("refreshing with %s" % refreshcmd)
+              os.system(refreshcmd)
+            elif errors:
+              logmessage("not writing zonefile as errors occured:\n" + errors)
+          except Exception, e:
+            logmessage("exception handling change: %s" % e)
+          laststates[zone] = currentstate
+          lastsums[zone] = currentsums
+    time.sleep(5)
+  logmessage("stopping dnswatch on %s" % dnswatchbasedir)
+

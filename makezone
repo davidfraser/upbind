@@ -1,0 +1,148 @@
+#!/usr/bin/env python
+
+"""constructs a zone file for Bind based on some simpler text files"""
+
+import os
+import glob
+import datetime
+
+minutes = 60
+hours = 60*minutes
+days = 24*hours
+
+class zoneinfo:
+    """manages zone information by reading out of definition files"""
+    def __init__(self, directory, defaulttarget, lastserial=None):
+        self.directory = directory
+        self.defaulttarget = defaulttarget
+        self.lastserial = lastserial
+        self.variables = {"TTL": 3*hours}
+        self.records = self.getvarsrecords(self.variables)
+        self.readinfo()
+    def cname(self, name, target=None):
+        """creates a CNAME record (alias for another name)"""
+        if target is None:
+            target = self.defaulttarget
+        self.records.append((name, "IN", "CNAME", target))
+    def a(self, name, target):
+        """creates an A record (points to an IP address"""
+        self.records.append((name, "IN", "A", target))
+    def readinfo(self):
+        """reads all the info in the given directory into records"""
+        lastvars = self.variables.copy()
+        configfile = os.path.join(self.directory, "autodns.conf")
+        if os.path.exists(configfile):
+          filenames = [filename.strip() for filename in open(configfile).read().split("\n")]
+          filenames = [filename for filename in filenames if filename and not filename.startswith("#")]
+        else:
+          filenames = [filename for filename in os.listdir(self.directory) if not filename.startswith(".")]
+          filenames.sort()
+        for infofilename in filenames:
+            infofilepath = os.path.join(self.directory, infofilename)
+            if not os.path.exists(infofilepath):
+                continue
+            self.records.append(("; " + infofilename,))
+            lastvars = self.readfile(infofilepath, lastvars)
+    def readfile(self, infofilepath, lastvars, defaultvariables=None):
+        if defaultvariables is None:
+          defaultvariables = self.variables
+        variables = defaultvariables.copy()
+        for line in open(infofilepath):
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("#"):
+                parts = line.replace("#", ";", 1).strip().split()
+                self.records.append(parts)
+                continue
+            parts = line.split()
+            if "=" in parts[0]:
+                key, value = parts[0].split("=", 1)
+                variables[key] = value
+                continue
+            elif variables and variables != lastvars:
+                varsrecords = self.getvarsrecords(variables)
+                self.records.extend(varsrecords)
+                lastvars = variables
+            if line.startswith("<"):
+                includefile = line.replace("<", "", 1).strip().split()[0]
+                includefile = os.path.join(self.directory, includefile)
+                if "*" in includefile:
+                    includefiles = glob.glob(includefile)
+                else:
+                    if os.path.exists(includefile):
+                        includefiles = [includefile]
+                    else:
+                        includefiles = []
+                for includefile in includefiles:
+                    lastvars = self.readfile(includefile, lastvars, variables)
+            else:
+                self.addparts(parts)
+        return variables.copy()
+    def addparts(self, parts):
+        """adds a record from the given parts"""
+        if len(parts) == 1:
+            self.cname(parts[0])
+        elif len(parts) == 2:
+            name, target = parts
+            if target[0].isdigit():
+                self.a(name, target)
+            else:
+                self.cname(parts[0], parts[1])
+        else:
+            if len(parts) > 3 and parts[2] == "SOA":
+                if parts[-1] == "()":
+                    parts[-1] = "(" + self.getsoaparts() + ")"
+                self.records.append(parts)
+            else:
+                self.records.append(parts)
+    def getserial(self):
+        """creates the serial number from the date"""
+        now = datetime.datetime.now()
+        currentdate = now.strftime("%Y%m%d")
+        if self.lastserial and self.lastserial.startswith(currentdate):
+          try:
+            serial = int(self.lastserial.replace(currentdate, "", 1)) + 1
+          except:
+            serial = now.strftime("%H%M")
+        else:
+          serial = 1
+        if isinstance(serial, int):
+          serial = "%02d" % serial
+        serial = currentdate + serial
+        self.lastserial = serial
+        return serial
+    def getsoaparts(self):
+        """ creates the parts for the SOA record"""
+        soaparts = [(self.getserial(), "Serial"),
+                    (3*hours, "Refresh 3 hours"),
+                    (1*hours, "Retry 1 hour"),
+                    (7*days, "Expire 1 week"),
+                    (1*minutes, "Cache NXDOMAIN for 1 minute")]
+        sep = "\n\t\t\t\t"
+        return sep + sep.join(["%s\t; %s" % (value, comment) for value, comment in soaparts]) + sep
+    def getrecords(self):
+        """returns all the records in printable format"""
+        for record in self.records:
+            yield "\t".join(record) + "\n"
+    def getvarsrecords(self, variables):
+        """Returns records for current variable values"""
+        vars = variables.items()
+        vars.sort()
+        return [("$" + key, str(value)) for key, value in vars]
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 3:
+        lastserial = sys.argv[3]
+    else:
+        lastserial = None
+    if len(sys.argv) > 2:
+        zonename = sys.argv[1]
+        zoneprefix = sys.argv[2]
+    else:
+        print >>sys.stderr, "need to specify zone name and suffix (e.g. '%s example example.com.')" % sys.argv[0]
+        sys.exit(1)
+    z = zoneinfo(os.path.join(os.path.dirname(__file__), zonename), zoneprefix, lastserial=lastserial)
+    print "".join(z.getrecords())
+

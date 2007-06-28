@@ -1,0 +1,12 @@
+#!/bin/bash
+# zones need to be added to /etc/named.conf manually
+export dnswatchsubsys=/var/lock/subsys/dnswatch
+export dnswatchpid=/var/run/dnswatch.pid
+export dnswatchlog=/var/log/dnswatch.log
+export dnswatchzonedir=/var/named/
+export dnswatchrefreshcmd="/etc/init.d/named reload"
+export dnswatchbasedir=/etc/autodns/
+export dnswatchzones="domain1 domain2"
+export dnswatchzoneprefix_domain1="domain1.com."
+export dnswatchzoneprefix_domain2="domain2.org."
+

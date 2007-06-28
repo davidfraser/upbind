@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# chkconfig: - 20 80 
+# description: dnswatch (autodns) updates named config based on /etc/autodns.
+# probe: true
+
+# watch dns ip addresses
+
+# source function library
+. /etc/rc.d/init.d/functions
+. /etc/dnswatch.rc
+
+case "$1" in
+  start)
+	echo -n "Starting dnswatch: "
+        echo 1 >$dnswatchsubsys
+	daemon /usr/bin/dnswatch-d
+        echo ""
+	;;
+  stop)
+	echo -n "Stopping dnswatch: "
+        rm -f $dnswatchsubsys
+	killproc dnswatch
+        echo ""
+	;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  status)
+	status dnswatch
+        ;;
+  *)
+	echo "Usage: dnswatch {start|stop|restart|status}"
+	exit 1
+esac
+
+exit 0
+

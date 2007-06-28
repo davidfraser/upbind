@@ -1,0 +1,3 @@
+TTL=600
+home	192.168.10.20
+loadbalance	mainhost

@@ -1,0 +1,10 @@
+TTL=1800
+domain2.org.	IN	SOA	ns.domain2.org. hostmaster.domain2.org. ()
+domain2.org.	IN	NS	ns.domain2.org.
+domain2.org.	IN	NS	ns1.somenameserver.net.
+domain2.org.	IN	NS	ns2.somenameserver.net.
+ns.domain2.org.	10.39.4.8
+ns1.somenameserver.net.	192.168.10.1
+ns2.somenameserver.net.	10.3.49.2
+domain2.org.	10.39.4.8
+
