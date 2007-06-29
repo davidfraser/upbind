@@ -53,17 +53,19 @@ def readserial(zonefile):
   return ""
 
 if __name__ == "__main__":
-  zones = os.getenv("dnswatchzones", "").split()
-  dnswatchbasedir = os.getenv("dnswatchbasedir", "/etc/autodns/")
-  servicefile = os.getenv("dnswatchsubsys", "/var/lock/subsys/dnswatch")
-  pidfile = os.getenv("dnswatchpid", "/var/run/dnswatch.pid")
-  zonedir = os.getenv("dnswatchzonedir", "/var/named/")
-  refreshcmd = os.getenv("dnswatchrefreshcmd", "/etc/init.d/named reload")
-  logfilename = os.getenv("dnswatchlog", None)
+  zones = os.getenv("upbind_zones", "").split()
+  upbindbasedir = os.getenv("upbind_basedir", "/etc/upbind/")
+  servicefile = os.getenv("upbind_subsys", "/var/lock/subsys/upbind")
+  pidfile = os.getenv("upbind_pid", "/var/run/upbind.pid")
+  zonedir = os.getenv("upbind_zonedir", "/var/named/")
+  refreshcmd = os.getenv("upbind_refreshcmd", "/etc/init.d/named reload")
+  logfilename = os.getenv("upbind_log", None)
   thisfile = __file__
   if os.path.islink(__file__):
     thisfile = os.readlink(__file__)
-  makezonecmd = os.path.join(os.path.dirname(os.path.abspath(thisfile)), "makezone")
+  makezonecmd = os.getenv("upbind_makezonecmd", None)
+  if makezonecmd is None:
+    makezonecmd = os.path.join(os.path.dirname(os.path.abspath(thisfile)), "upbind-makezone")
   pid = os.fork()
   if pid:
     open(pidfile, "w").write("%d\n" % pid)
@@ -83,18 +85,18 @@ if __name__ == "__main__":
       logmessage("received sigterm, exiting")
       finished = True
   signal.signal(signal.SIGTERM, handlesignal)
-  logmessage("starting dnswatch on %s for zones %s" % (dnswatchbasedir, " ".join(zones)))
-  laststates = {} # dnsstate(dnswatchdir) for each zone
-  # force an update when dnswatch is started
+  logmessage("starting upbind on %s for zones %s" % (upbindbasedir, " ".join(zones)))
+  laststates = {} # dnsstate(upbinddir) for each zone
+  # force an update when upbind is started
   # TODO: work out how not to force this...
   lastsums = {} # laststate.getsums() for each zone
   lastpos = 0
   while not finished and os.path.isfile(servicefile):
     for zone in zones:
-      zoneprefix = os.getenv("dnswatchzoneprefix_%s" % zone, zone+".")
-      dnswatchdir = os.path.join(dnswatchbasedir, zone)
+      zoneprefix = os.getenv("upbind_zoneprefix_%s" % zone, zone+".")
+      upbinddir = os.path.join(upbindbasedir, zone)
       zonefile = os.path.join(zonedir, "named.%s" % zone)
-      currentstate = dnsstate(dnswatchdir)
+      currentstate = dnsstate(upbinddir)
       if currentstate != laststates.get(zone, None):
         currentsums = currentstate.getsums()
         if currentsums != lastsums.get(zone, {}):
@@ -116,5 +118,5 @@ if __name__ == "__main__":
           laststates[zone] = currentstate
           lastsums[zone] = currentsums
     time.sleep(5)
-  logmessage("stopping dnswatch on %s" % dnswatchbasedir)
+  logmessage("stopping upbind on %s" % upbindbasedir)
 

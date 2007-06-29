@@ -1,10 +1,10 @@
 name := upbind
 version := 0.1
 
-sample1files=autodns.conf mail nameserver services
-sample2files=autodns.conf dynamic mail nameserver services users
+sample1files=upbind.conf mail nameserver services
+sample2files=upbind.conf dynamic mail nameserver services users
 samplefiles=$(foreach file,${sample1files},samples/domain1/${file}) $(foreach file,${sample2files},samples/domain2/${file})
-srcfiles=Makefile dnswatch dnswatch-d dnswatch.rc makezone upbind.spec $(samplefiles)
+srcfiles=Makefile upbind upbind-watcher upbind.rc upbind-makezone upbind.spec $(samplefiles)
 
 ${name}-${version}.tar.gz: targetdir=${name}-${version}
 ${name}-${version}.tar.gz: $(srcfiles)
@@ -23,10 +23,10 @@ tarball: ${name}-${version}.tar.gz
 install: $(srcfiles)
 install: DESTDIR ?= /
 install:
-	install -D dnswatch ${DESTDIR}/etc/init.d/dnswatch
-	install -D dnswatch.rc ${DESTDIR}/etc/dnswatch.rc
-	install -D dnswatch-d ${DESTDIR}/usr/sbin/dnswatch-d
-	install -D makezone ${DESTDIR}/usr/bin/makezone
+	install -D upbind ${DESTDIR}/etc/init.d/upbind
+	install -D upbind.rc ${DESTDIR}/etc/upbind.rc
+	install -D upbind-watcher ${DESTDIR}/usr/sbin/upbind-watcher
+	install -D upbind-makezone ${DESTDIR}/usr/bin/upbind-makezone
 
 rpm:	tarball
 rpm:

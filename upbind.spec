@@ -40,15 +40,15 @@ make DESTDIR=$RPM_BUILD_ROOT install
 rm -rf %{buildroot}
 
 %files
-/etc/init.d/dnswatch
-/usr/sbin/dnswatch-d
-/etc/dnswatch.rc
-/usr/bin/makezone
-%doc samples/domain1/autodns.conf
+/etc/init.d/upbind
+/usr/sbin/upbind-watcher
+/etc/upbind.rc
+/usr/bin/upbind-makezone
+%doc samples/domain1/upbind.conf
 %doc samples/domain1/mail
 %doc samples/domain1/nameserver
 %doc samples/domain1/services
-%doc samples/domain2/autodns.conf
+%doc samples/domain2/upbind.conf
 %doc samples/domain2/dynamic
 %doc samples/domain2/mail
 %doc samples/domain2/nameserver

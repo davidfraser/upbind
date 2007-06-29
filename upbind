@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# chkconfig: - 20 80 
+# description: upbind (autodns) updates named config based on /etc/upbind.rc
+# probe: true
+
+# watch dns ip addresses
+
+# source function library
+. /etc/rc.d/init.d/functions
+. /etc/upbind.rc
+
+case "$1" in
+  start)
+	echo -n "Starting upbind: "
+        echo 1 >$upbind_subsys
+	daemon /usr/sbin/upbind-watcher
+        echo ""
+	;;
+  stop)
+	echo -n "Stopping upbind: "
+        rm -f $upbind_subsys
+	killproc upbind
+        echo ""
+	;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  status)
+	status upbind
+        ;;
+  *)
+	echo "Usage: upbind {start|stop|restart|status}"
+	exit 1
+esac
+
+exit 0
+

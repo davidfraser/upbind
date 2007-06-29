@@ -30,7 +30,7 @@ class zoneinfo:
     def readinfo(self):
         """reads all the info in the given directory into records"""
         lastvars = self.variables.copy()
-        configfile = os.path.join(self.directory, "autodns.conf")
+        configfile = os.path.join(self.directory, "upbind.conf")
         if os.path.exists(configfile):
           filenames = [filename.strip() for filename in open(configfile).read().split("\n")]
           filenames = [filename for filename in filenames if filename and not filename.startswith("#")]
