@@ -143,6 +143,7 @@ if __name__ == "__main__":
     else:
         print >>sys.stderr, "need to specify zone name and suffix (e.g. '%s example example.com.')" % sys.argv[0]
         sys.exit(1)
-    z = zoneinfo(os.path.join(os.path.dirname(__file__), zonename), zoneprefix, lastserial=lastserial)
+    upbindbasedir = os.getenv("upbind_basedir", "/etc/upbind/")
+    z = zoneinfo(os.path.join(upbindbasedir, zonename), zoneprefix, lastserial=lastserial)
     print "".join(z.getrecords())
 
