@@ -63,9 +63,7 @@ if __name__ == "__main__":
     thisfile = __file__
     if os.path.islink(__file__):
         thisfile = os.readlink(__file__)
-    makezonecmd = os.getenv("upbind_makezonecmd", None)
-    if makezonecmd is None:
-        makezonecmd = os.path.join(os.path.dirname(os.path.abspath(thisfile)), "upbind-makezone")
+    makezonecmd = os.getenv("upbind_makezonecmd", "upbind-makezone")
     pid = os.fork()
     if pid:
         open(pidfile, "w").write("%d\n" % pid)
