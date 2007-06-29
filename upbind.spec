@@ -9,6 +9,8 @@
 %define upbindver 0.1
 %endif
 
+# TODO: mark this as being noarch rather than building for i386/x64 etc
+
 Summary:	A utility for easily managing and updating zonefiles for BIND
 Name:		upbind
 Version:	%upbindver
