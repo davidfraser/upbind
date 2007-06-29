@@ -42,7 +42,8 @@ rm -rf %{buildroot}
 %files
 /etc/init.d/upbind
 /usr/sbin/upbind-watcher
-/etc/upbind.rc
+%config /etc/upbind.rc
+%dir /etc/upbind
 /usr/bin/upbind-makezone
 %doc samples/domain1/upbind.conf
 %doc samples/domain1/mail

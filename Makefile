@@ -27,7 +27,7 @@ install:
 	install -D upbind.rc ${DESTDIR}/etc/upbind.rc
 	install -D upbind-watcher ${DESTDIR}/usr/sbin/upbind-watcher
 	install -D upbind-makezone ${DESTDIR}/usr/bin/upbind-makezone
-
+	install -d ${DESTDIR}/etc/upbind/
 rpm:	tarball
 rpm:
 	rpmbuild -ta ${name}-${version}.tar.gz
