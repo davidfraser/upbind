@@ -16,8 +16,7 @@ Name:		upbind
 Version:	%upbindver
 Release:	0%{?beta:.beta%{beta}}
 License:	GPL
-# TODO: check best group
-Group:		Applications/Internet
+Group:		System Environment/Daemons
 # TODO: create this web address
 URL:		http://open.sjsoft.com/utilcode/upbind/
 Source:		http://open.sjsoft.com/download/%{name}-%{upbindver}.tar.gz
