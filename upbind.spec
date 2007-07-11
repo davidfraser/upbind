@@ -3,6 +3,8 @@
 #       way to comment it out is to replace the % with #
 #define beta 7
 
+# TODO: define version in a single place
+
 %if 0%{?beta}
 %define upbindver %(echo "0.1" | sed -e 's/beta.*//')
 %else
