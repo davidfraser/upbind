@@ -1,5 +1,5 @@
 name := upbind
-version := 0.1
+version := 0.1.1
 
 sample1files=upbind.conf mail nameserver services
 sample2files=upbind.conf dynamic mail nameserver services users
@@ -30,5 +30,5 @@ install:
 	install -d ${DESTDIR}/etc/upbind/
 rpm:	tarball
 rpm:
-	rpmbuild -ta ${name}-${version}.tar.gz
+	rpmbuild -ta --define="upbind_version ${version}" ${name}-${version}.tar.gz
 
