@@ -9,8 +9,6 @@
 %define upbindver 0.1
 %endif
 
-# TODO: mark this as being noarch rather than building for i386/x64 etc
-
 Summary:	A utility for easily managing and updating zonefiles for BIND
 Name:		upbind
 Version:	%upbindver
@@ -20,6 +18,7 @@ Group:		System Environment/Daemons
 # TODO: create this web address
 URL:		http://open.sjsoft.com/utilcode/upbind/
 Source:		http://open.sjsoft.com/download/%{name}-%{upbindver}.tar.gz
+BuildArch:	noarch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 
 # Generic Build requirements
