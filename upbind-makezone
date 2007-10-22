@@ -118,7 +118,7 @@ class zoneinfo:
                     (3*hours, "Refresh 3 hours"),
                     (1*hours, "Retry 1 hour"),
                     (7*days, "Expire 1 week"),
-                    (1*minutes, "Cache NXDOMAIN for 1 minute")]
+                    (30*minutes, "Cache NXDOMAIN for 30 minutes")]
         sep = "\n\t\t\t\t"
         return sep + sep.join(["%s\t; %s" % (value, comment) for value, comment in soaparts]) + sep
     def getrecords(self):
