@@ -1,5 +1,5 @@
 name := upbind
-version := 0.1.2
+version := 0.1.3
 
 sample1files=upbind.conf mail nameserver services
 sample2files=upbind.conf dynamic mail nameserver services users
