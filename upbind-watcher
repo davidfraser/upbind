@@ -16,10 +16,12 @@ class dnsstate:
     """keeps track of dns files"""
     def __init__(self, watchdir):
         self.watchdir = watchdir
-        self.filenames = os.listdir(self.watchdir)
-        for filename in self.filenames:
+        self.filenames = []
+        filenames = os.listdir(self.watchdir)
+        for filename in filenames:
             if filename == "CVS": continue
             if filename.startswith("."): continue
+            self.filenames.append(filename)
             pathname = os.path.join(self.watchdir, filename)
             if os.path.isdir(pathname):
                 self.filenames.extend([os.path.join(filename, subfile) for subfile in os.listdir(pathname)])
