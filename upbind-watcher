@@ -19,12 +19,11 @@ class dnsstate:
         self.filenames = []
         filenames = os.listdir(self.watchdir)
         for filename in filenames:
-            if filename == "CVS": continue
-            if filename.startswith("."): continue
+            if not self.validfilename(filename): continue
             self.filenames.append(filename)
             pathname = os.path.join(self.watchdir, filename)
             if os.path.isdir(pathname):
-                self.filenames.extend([os.path.join(filename, subfile) for subfile in os.listdir(pathname)])
+                self.filenames.extend([os.path.join(filename, subfile) for subfile in os.listdir(pathname) if self.validfilename(subfile)])
         self.mtimes = {}
         for filename in self.filenames:
             self.mtimes[filename] = getmodtime(os.path.join(self.watchdir, filename))
@@ -40,6 +39,9 @@ class dnsstate:
                 contents = open(pathname, 'rb').read()
                 sums[filename] = md5.md5(contents).hexdigest()
         return sums
+    def validfilename(self, filename):
+        """returns whether the given filename is a valid one to watch"""
+        return not (filename == "CVS" or filename.startswith("."))
 
 def readserial(zonefile):
     """reads the serial number from the zonefile"""
