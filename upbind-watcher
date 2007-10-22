@@ -97,8 +97,10 @@ if __name__ == "__main__":
             currentstate = dnsstate(upbinddir)
             if currentstate != laststates.get(zone, None):
                 currentsums = currentstate.getsums()
-                if currentsums != lastsums.get(zone, {}):
-                    logmessage("dns info has changed, running %s" % makezonecmd)
+                lastzonesums = lastsums.get(zone, {})
+                if currentsums != lastzonesums:
+                    changes = [a for a in currentsums if currentsums[a] != lastzonesums.get(a, None)]
+                    logmessage("dns info has changed (files: %s), running %s" % (", ".join(changes), makezonecmd))
                     try:
                         lastserial = readserial(zonefile)
                         child_stdin, child_stdout, child_stderr = os.popen3([makezonecmd, zone, zoneprefix, lastserial], "r")
