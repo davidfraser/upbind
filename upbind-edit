@@ -17,6 +17,8 @@ class EditOptions(optparse.OptionParser):
                            help="Add an entry to the domain")
         actions.add_option("-m", "--modify", action="store_const", dest="action", const="modify",
                            help="Modify an entry in the domain")
+        actions.add_option("-s", "--set", action="store_const", dest="action", const="set",
+                           help="Sets an entry in the domain (adding or modifying as required)")
         actions.add_option("-r", "--remove", action="store_const", dest="action", const="remove",
                            help="Remove an entry from the domain")
         actions.add_option("", "--list-domains", action="store_const", dest="action", const="list_domains",
@@ -58,7 +60,7 @@ class EditOptions(optparse.OptionParser):
             valid_actions = sorted([str(x) for x in self.actions.option_list])
             valid_actions_str = ", ".join(valid_actions[:-1]) + " or " + valid_actions[-1]
             raise optparse.OptParseError("Must specify an Action option (%s)" % valid_actions_str)
-        if options.action in ("add", "modify", "remove"):
+        if options.action in ("add", "modify", "set", "remove"):
             if not options.domain:
                 raise optparse.OptParseError("Must specify domain for action %s" % options.action)
         # Perform actions
@@ -77,7 +79,7 @@ class EditOptions(optparse.OptionParser):
                         print filename
                     else:
                         print "%s\t%s" % (domain, filename)
-        if options.action in ("add", "modify", "remove"):
+        if options.action in ("add", "modify", "set", "remove"):
             if len(args) == 1:
                 name, target = args[0], None
                 new_entry = "%s\n" % name
@@ -88,14 +90,14 @@ class EditOptions(optparse.OptionParser):
                 logging.error("Action %s received incorrect number of arguments: %s" % (options.action, args))
                 raise optparse.OptParseError("Action %s expects name [target] as arguments" % (options.action))
             if not options.filename:
-                if options.action == "add":
+                if options.action == "set":
                     raise optparse.OptParseError("Must specify file for action %s" % options.action)
                 options.filename = self.find_filename(options.domain, name, target)
             filename = self.get_filename(options)
             if options.action == "add":
                 open(filename, "a").write(new_entry)
                 logging.info("Added %s to %s" % (new_entry, filename))
-            if options.action in ("remove", "modify"):
+            if options.action in ("remove", "modify", "set"):
                 lines = open(filename, "r").readlines()
                 new_lines = []
                 found = False
@@ -110,21 +112,22 @@ class EditOptions(optparse.OptionParser):
                                     raise ValueError("%s points to %s not %s in %s - not removing" % (name, parts[1], target, filename))
                             found = True
                             continue
-                        elif options.action == "modify":
+                        elif options.action in ("modify", "set"):
                             found = True
-                            if target:
-                                line = "%s\t%s\n" % (name, target)
-                            else:
-                                line = "%s\n" % (name,)
+                            line = new_entry
                     new_lines.append(line)
                 if found:
                     open(filename, "w").write("".join(new_lines))
                     if options.action == "remove":
                         logging.info("Removed %s from %s" % (name, filename))
-                    if options.action == "modify":
+                    if options.action in ("modify", "set"):
                         logging.info("Modified %s in %s" % (name, filename))
-                else:
+                elif options.action in ("modify", "remove"):
                     raise ValueError("Could not find %s in %s for %s" % (name, filename, options.action))
+                elif options.action == "set":
+                    # set did not find an entry to modify, so adding instead
+                    open(filename, "a").write(new_entry)
+                    logging.info("Added %s to %s" % (new_entry, filename))
         return 0
 
     def iter_domains(self):
