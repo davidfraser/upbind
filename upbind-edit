@@ -1,0 +1,198 @@
+#!/usr/bin/env python
+
+"""Tool to help script the editing of DNS entries"""
+
+import optparse
+import upbind
+import os
+import logging
+
+__USAGE__ = """%prog [options]\n""" + __doc__ + """\nUse -h for list of options."""
+
+class EditOptions(optparse.OptionParser):
+    def __init__(self, usage=__USAGE__, version=upbind.version):
+        optparse.OptionParser.__init__(self, usage=usage, version=version)
+        self.actions = actions = self.add_option_group("Actions", "Actions that the editor can perform")
+        actions.add_option("-a", "--add", action="store_const", dest="action", const="add",
+                           help="Add an entry to the domain")
+        actions.add_option("-m", "--modify", action="store_const", dest="action", const="modify",
+                           help="Modify an entry in the domain")
+        actions.add_option("-r", "--remove", action="store_const", dest="action", const="remove",
+                           help="Remove an entry from the domain")
+        actions.add_option("", "--list-domains", action="store_const", dest="action", const="list_domains",
+                           help="List the parent domains")
+        actions.add_option("", "--list-files", action="store_const", dest="action", const="list_files",
+                           help="List files defined for the given domain")
+        self.add_option("-d", "--domain", type="string", dest="domain", default=None,
+                        help="Select the parent domain to be modified")
+        self.add_option("-f", "--file", type="string", dest="filename", default=None,
+                        help="Select the file within the domain to operate on")
+        self.add_option("", "--rcfile", type="string", dest="rcfile", default="/etc/upbind.rc",
+                        help="Select the rc file that options are defined in")
+
+    def get_environment(self, rcfile):
+        """sets up an environment by reading values from the rc file"""
+        environ = {}
+        for line in open(rcfile, "r"):
+            line = line.strip()
+            if line.startswith("#"): continue
+            if line.startswith("export "):
+                line = line.replace("export ","")
+                key,value = line.split("=", 1)
+                if value.startswith("'") and value.endswith("'"):
+                    value = value[1:-1]
+                elif value.startswith('"') and value.endswith('"'):
+                    value = value[1:-1]
+                environ[key] = value
+        for key in environ.keys():
+            # allow overriding keys in the os environment
+            key = os.getenv(key, environ[key])
+        self.environ = environ
+        return environ
+
+    def run(self, options, args):
+        """runs with the given options"""
+        # Check validity of options
+        self.get_environment(options.rcfile)
+        if not options.action:
+            valid_actions = sorted([str(x) for x in self.actions.option_list])
+            valid_actions_str = ", ".join(valid_actions[:-1]) + " or " + valid_actions[-1]
+            raise optparse.OptParseError("Must specify an Action option (%s)" % valid_actions_str)
+        if options.action in ("add", "modify", "remove"):
+            if not options.domain:
+                raise optparse.OptParseError("Must specify domain for action %s" % options.action)
+        # Perform actions
+        if options.action == "list_domains":
+            for domain, fullname in self.iter_domains():
+                print "%s\t%s\t%s" % (domain, fullname, self.get_domain_dir(domain))
+        if options.action == "list_files":
+            if options.domain:
+                domains = [options.domain]
+            else:
+                domains = [domain for domain, fullname in self.iter_domains()]
+            for domain in domains:
+                filenames = self.get_domain_filenames(domain)
+                for filename in filenames:
+                    if options.domain:
+                        print filename
+                    else:
+                        print "%s\t%s" % (domain, filename)
+        if options.action in ("add", "modify", "remove"):
+            if len(args) == 1:
+                name, target = args[0], None
+                new_entry = "%s\n" % name
+            elif len(args) == 2:
+                name, target = args
+                new_entry = "%s\t%s\n" % (name, target)
+            else:
+                logging.error("Action %s received incorrect number of arguments: %s" % (options.action, args))
+                raise optparse.OptParseError("Action %s expects name [target] as arguments" % (options.action))
+            if not options.filename:
+                if options.action == "add":
+                    raise optparse.OptParseError("Must specify file for action %s" % options.action)
+                options.filename = self.find_filename(options.domain, name, target)
+            filename = self.get_filename(options)
+            if options.action == "add":
+                open(filename, "a").write(new_entry)
+                logging.info("Added %s to %s" % (new_entry, filename))
+            if options.action in ("remove", "modify"):
+                lines = open(filename, "r").readlines()
+                new_lines = []
+                found = False
+                for line in lines:
+                    parts = line.strip().split()
+                    if parts and parts[0] == name:
+                        if options.action == "remove":
+                            if target is not None:
+                                if len(parts) <= 1 and target:
+                                    raise ValueError("%s points to the default not %s in %s - not removing" % (name, target, filename))
+                                if parts[1] != target:
+                                    raise ValueError("%s points to %s not %s in %s - not removing" % (name, parts[1], target, filename))
+                            found = True
+                            continue
+                        elif options.action == "modify":
+                            found = True
+                            if target:
+                                line = "%s\t%s\n" % (name, target)
+                            else:
+                                line = "%s\n" % (name,)
+                    new_lines.append(line)
+                if found:
+                    open(filename, "w").write("".join(new_lines))
+                    if options.action == "remove":
+                        logging.info("Removed %s from %s" % (name, filename))
+                    if options.action == "modify":
+                        logging.info("Modified %s in %s" % (name, filename))
+                else:
+                    raise ValueError("Could not find %s in %s for %s" % (name, filename, options.action))
+        return 0
+
+    def iter_domains(self):
+        """iterates through (domainprefix, fullname)"""
+        for domain in self.environ["upbind_zones"].split():
+            fullname = self.environ["upbind_zoneprefix_%s" % domain]
+            yield domain, fullname
+
+    def get_domain_dir(self, domain):
+        """gets the directory in which the given domain's options are defined"""
+        if domain not in self.environ["upbind_zones"]:
+            for search_domain, search_fullname in self.iter_domains():
+                if search_fullname == domain or search_fullname == domain + ".":
+                    domain = search_domain
+                    break
+            else:
+                raise ValueError("Could not find domain %s in configuration" % domain)
+        return os.path.join(self.environ["upbind_basedir"], domain)
+
+    def get_domain_filenames(self, domain):
+        """lists the files used to define the given domain"""
+        domain_dir = self.get_domain_dir(domain)
+        for line in open(os.path.join(domain_dir, "upbind.conf")):
+            filename = line.strip()
+            yield filename
+            for include_file in self.search_include_files(domain_dir, filename):
+                yield include_file
+
+    def search_include_files(self, domain_dir, filename):
+        """searches through any include files specified in the given file, recursively"""
+        for line in open(os.path.join(domain_dir, filename)):
+            if line.startswith("<"):
+                include_file = line.replace("<", "", 1).strip().split()[0]
+                yield include_file
+                for sub_include in self.search_include_files(domain_dir, include_file):
+                    yield sub_include
+
+    def find_filename(self, domain, name, target=None):
+        """searches the files and finds the one containing the target"""
+        domain_dir = self.get_domain_dir(options.domain)
+        for filename in self.get_domain_filenames(domain_dir):
+            for line in open(os.path.join(domain_dir, filename), "r"):
+                parts = line.split()
+                if parts and parts[0] == name:
+                    if not target or parts[1] == target:
+                        return filename
+                    else:
+                        raise ValueError("The current target for %s in %s is not %s" % (name, domain, target))
+
+    def get_filename(self, options):
+        """returns the filename specified in options"""
+        domain_dir = self.get_domain_dir(options.domain)
+        return os.path.join(domain_dir, options.filename)
+
+if __name__ == "__main__":
+    import sys
+    editor = EditOptions()
+    options, args = editor.parse_args(sys.argv)
+    try:
+        result = editor.run(options, args[1:])
+    except optparse.OptParseError, e:
+        print >>sys.stderr, e
+        print >>sys.stderr, editor.get_usage()
+        result = 1
+    except Exception, e:
+        print >>sys.stderr, e
+        result = 1
+        raise
+    sys.exit(result)
+
+

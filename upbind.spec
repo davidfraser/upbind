@@ -9,6 +9,8 @@
 %define upbindver %{upbind_version}
 %endif
 
+%{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+
 Summary:	A utility for easily managing and updating zonefiles for BIND
 Name:		upbind
 Version:	%upbindver
@@ -42,9 +44,11 @@ rm -rf %{buildroot}
 %files
 /etc/init.d/upbind
 /usr/sbin/upbind-watcher
+/usr/sbin/upbind-edit
 %config /etc/upbind.rc
 %dir /etc/upbind
 /usr/bin/upbind-makezone
+%{python_sitelib}/upbind.py*
 %doc samples/domain1/upbind.conf
 %doc samples/domain1/mail
 %doc samples/domain1/nameserver
