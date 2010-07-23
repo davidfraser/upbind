@@ -2,13 +2,16 @@
 
 """constructs a zone file for Bind based on some simpler text files"""
 
-import os
-import glob
 import datetime
+import glob
+import os
+import re
 
 minutes = 60
 hours = 60*minutes
 days = 24*hours
+
+ZONEFILE_PART_RE =  re.compile(r'''\s*(?:("[^"]*"|'[^']*'|\S+)\s*)''')
 
 class zoneinfo:
     """manages zone information by reading out of definition files"""
@@ -32,11 +35,11 @@ class zoneinfo:
         lastvars = self.variables.copy()
         configfile = os.path.join(self.directory, "upbind.conf")
         if os.path.exists(configfile):
-          filenames = [filename.strip() for filename in open(configfile).read().split("\n")]
-          filenames = [filename for filename in filenames if filename and not filename.startswith("#")]
+            filenames = [filename.strip() for filename in open(configfile).read().split("\n")]
+            filenames = [filename for filename in filenames if filename and not filename.startswith("#")]
         else:
-          filenames = [filename for filename in os.listdir(self.directory) if not filename.startswith(".")]
-          filenames.sort()
+            filenames = [filename for filename in os.listdir(self.directory) if not filename.startswith(".")]
+            filenames.sort()
         for infofilename in filenames:
             infofilepath = os.path.join(self.directory, infofilename)
             if not os.path.exists(infofilepath):
@@ -45,17 +48,19 @@ class zoneinfo:
             lastvars = self.readfile(infofilepath, lastvars)
     def readfile(self, infofilepath, lastvars, defaultvariables=None):
         if defaultvariables is None:
-          defaultvariables = self.variables
+            defaultvariables = self.variables
         variables = defaultvariables.copy()
         for line in open(infofilepath):
             line = line.strip()
             if not line:
                 continue
             if line.startswith("#"):
-                parts = line.replace("#", ";", 1).strip().split()
+                line = line.replace("#", ";", 1).strip()
+                parts = ZONEFILE_PART_RE.findall(line)
                 self.records.append(parts)
                 continue
-            parts = line.split()
+            # split without splitting quoted parts
+            parts = ZONEFILE_PART_RE.findall(line)
             if "=" in parts[0]:
                 key, value = parts[0].split("=", 1)
                 variables[key] = value
