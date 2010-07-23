@@ -56,7 +56,7 @@ class zoneinfo:
                 continue
             if line.startswith("#"):
                 line = line.replace("#", ";", 1).strip()
-                parts = ZONEFILE_PART_RE.findall(line)
+                parts = [line]
                 self.records.append(parts)
                 continue
             # split without splitting quoted parts
