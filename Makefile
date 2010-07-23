@@ -1,8 +1,9 @@
 name := upbind
-defined_version := $(shell env python -c "import upbind; print upbind.version")
+python ?= python
+defined_version := $(shell env $(python) -c "import upbind; print upbind.version")
 version ?= ${defined_version}
 
-defined_python_sitelib := $(shell env python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")
+defined_python_sitelib := $(shell env $(python) -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")
 python_sitelib ?= ${defined_python_sitelib}
 $(warning ${python_sitelib} ${version})
 
