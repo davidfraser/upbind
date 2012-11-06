@@ -1,0 +1,4 @@
+*.pyc
+debian/upbind.debhelper.log
+debian/upbind/
+upbind-*.tar.gz
