@@ -1,7 +1,8 @@
 #!/bin/bash
 # see /etc/default/upbind for other settings which can be overridden here
 # NB zones need to be added to /etc/named.conf manually
-export upbind_zones="domain1 domain2"
-export upbind_zoneprefix_domain1="domain1.com."
-export upbind_zoneprefix_domain2="domain2.org."
+# export upbind_zones="domain1 domain2"
+export upbind_zones=""
+# export upbind_zoneprefix_domain1="domain1.com."
+# export upbind_zoneprefix_domain2="domain2.org."
 
