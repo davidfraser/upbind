@@ -5,7 +5,7 @@ version ?= ${defined_version}
 
 defined_python_sitelib := $(shell env $(python) -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")
 python_sitelib ?= ${defined_python_sitelib}
-$(warning ${python_sitelib} ${version})
+$(warning Using Python ${python_sitelib} ${version})
 
 sample1files=upbind.conf mail nameserver services
 sample2files=upbind.conf dynamic mail nameserver services users
@@ -26,8 +26,8 @@ ${name}-${version}.tar.gz:
 
 tarball: ${name}-${version}.tar.gz
 
+DESTDIR ?= /
 install: $(srcfiles)
-install: DESTDIR ?= /
 install:
 	install -D upbind ${DESTDIR}/etc/init.d/upbind
 	install -D upbind.rc ${DESTDIR}/etc/upbind.rc
