@@ -6,7 +6,7 @@
 # This is a POSIX shell fragment
 #
 
-export upbind_subsys=/var/lock/subsys/upbind
+export upbind_subsys=
 export upbind_pid=/var/run/upbind.pid
 export upbind_log=/var/log/upbind.log
 export upbind_zonedir=/var/cache/bind/

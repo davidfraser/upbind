@@ -93,7 +93,7 @@ if __name__ == "__main__":
     # TODO: work out how not to force this...
     lastsums = {} # laststate.getsums() for each zone
     lastpos = 0
-    while not finished and os.path.isfile(servicefile):
+    while not finished and (not servicefile or os.path.isfile(servicefile)):
         for zone in zones:
             zoneprefix = os.getenv("upbind_zoneprefix_%s" % zone, zone+".")
             upbinddir = os.path.join(upbindbasedir, zone)
