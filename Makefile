@@ -10,7 +10,7 @@ $(warning ${python_sitelib} ${version})
 sample1files=upbind.conf mail nameserver services
 sample2files=upbind.conf dynamic mail nameserver services users
 samplefiles=$(foreach file,${sample1files},samples/domain1/${file}) $(foreach file,${sample2files},samples/domain2/${file})
-srcfiles=Makefile upbind upbind-edit upbind-watcher test.rc upbind.rc upbind-makezone upbind.spec upbind.py $(samplefiles)
+srcfiles=Makefile LICENSE upbind upbind-edit upbind-watcher test.rc upbind.rc upbind-makezone upbind.spec upbind.py $(samplefiles)
 
 ${name}-${version}.tar.gz: targetdir=${name}-${version}
 ${name}-${version}.tar.gz: $(srcfiles)
@@ -35,6 +35,7 @@ install:
 	install -D upbind-watcher ${DESTDIR}/usr/sbin/upbind-watcher
 	install -D upbind-makezone ${DESTDIR}/usr/bin/upbind-makezone
 	install -D upbind-edit ${DESTDIR}/usr/sbin/upbind-edit
+	install -D LICENSE ${DESTDIR}/usr/share/doc/upbind/LICENSE
 	install -d ${DESTDIR}/etc/upbind/
 rpm:	tarball
 rpm:

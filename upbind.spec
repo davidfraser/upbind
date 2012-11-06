@@ -15,7 +15,7 @@ Summary:	A utility for easily managing and updating zonefiles for BIND
 Name:		upbind
 Version:	%upbindver
 Release:	0%{?beta:.beta%{beta}}
-License:	GPL
+License:	ISC
 Group:		System Environment/Daemons
 # TODO: create this web address
 URL:		http://open.sjsoft.com/utilcode/upbind/
@@ -49,6 +49,7 @@ rm -rf %{buildroot}
 %dir /etc/upbind
 /usr/bin/upbind-makezone
 %{python_sitelib}/upbind.py*
+%doc LICENSE
 %doc samples/domain1/upbind.conf
 %doc samples/domain1/mail
 %doc samples/domain1/nameserver
