@@ -17,8 +17,7 @@ Version:	%upbindver
 Release:	0%{?beta:.beta%{beta}}
 License:	ISC
 Group:		System Environment/Daemons
-# TODO: create this web address
-URL:		http://open.sjsoft.com/utilcode/upbind/
+URL:		https://github.com/davidfraser/upbind
 Source:		http://open.sjsoft.com/download/%{name}-%{upbindver}.tar.gz
 BuildArch:	noarch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
