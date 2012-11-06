@@ -1,0 +1,18 @@
+# Defaults for upbind initscript
+# sourced by /etc/init.d/upbind
+# installed at /etc/default/upbind by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+export upbind_subsys=/var/lock/subsys/upbind
+export upbind_pid=/var/run/upbind.pid
+export upbind_log=/var/log/upbind.log
+export upbind_zonedir=/var/cache/bind/
+export upbind_refreshcmd="/etc/init.d/bind9 reload"
+export upbind_basedir=/etc/upbind/
+export upbind_zones=""
+
+# Additional options that are passed to the Daemon.
+DAEMON_OPTS=""

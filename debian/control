@@ -1,0 +1,15 @@
+Source: upbind
+Section: net
+Priority: extra
+Maintainer: David Fraser <davidf@sjsoft.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+Homepage: https://github.com/davidfraser/upbind
+Vcs-Git: https://github.com/davidfraser/upbind.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/upbind.git;a=summary
+
+Package: upbind
+Architecture: all
+Depends: ${misc:Depends} bind9, python
+Description: A utility for easily managing and updating zonefiles for BIND
+ Upbind lets you maintain DNS definitions in a simple set of text files, and watches these files and regenerates zone files automatically. It tells bind to reload the zone files whenever they change, and generates zone serial numbers. 

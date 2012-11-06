@@ -1,0 +1,6 @@
+The Debian Package upbind
+----------------------------
+
+Upbind lets you maintain DNS definitions in a simple set of text files, and watches these files and regenerates zone files automatically. It tells bind to reload the zone files whenever they change, and generates zone serial numbers.
+
+ -- David Fraser <davidf@sjsoft.com>  Tue, 06 Nov 2012 12:58:35 +0200
